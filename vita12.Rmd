@@ -1,0 +1,67 @@
+---
+title: "VITA12 - Comparison between Mojonnier & Centrifuge Tubes"
+output: html_notebook
+---
+
+## Objective ##
+To establish whether the use of Mojonnier tube can be replaced by centrifuge tubes as part of the VITA12 analysis.
+
+
+```{r, echo = FALSE}
+# Clean Up environment ---------------------------------------------------
+rm(list=ls())
+
+# Packages ---------------------------------------------------------------
+library(readxl)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(equivalence)
+
+# Data Input -------------------------------------------------------------
+vita <- read_excel("~/Documents/GitHub/vita12.centrifuge/data/VITA12 CENTRIFUGE TUBES TRIAL STUDY.xlsx", 
+                   skip = 1)
+
+# Data Cleaning ----------------------------------------------------------
+
+vita <- vita[-1,c(-5,-8)]
+colnames(vita)[1:6] <- c("Analyst", "Date", "Batch", "Sample", "Mojonnier", "Centrifuge")
+
+vita[,5:6] <- sapply(vita[,5:6], as.numeric)
+vita12 <- vita %>% 
+        fill(Analyst, Date, Batch) %>% 
+        na.omit(Sample)
+```
+
+Ofter tidying the paired data:
+
+```{r}
+vita12
+```
+
+### Graphing these points ###
+
+```{r, echo = FALSE}
+vita_plot <- ggplot(vita12, aes(x=Mojonnier, y=Centrifuge)) +
+        geom_point(shape=21, size=4, col="black", fill="cornflowerblue") +
+        geom_abline(slope = 1, intercept = 0, lty=2, col="red")
+vita_plot
+```
+
+### Students t-test, paired ###
+```{r, echo = FALSE}
+t.test(vita12$Centrifuge, vita12$Mojonnier, paired = TRUE)
+
+```
+
+The t-test indicates that there is not enough difference between the data sets to reject the null hypothesis, Ho, that there is no difference between the two sets.
+
+### TOST Test ###
+The nominal acceptable difference has been set at 100.
+
+```{r, echo=FALSE}
+tost(vita12$Centrifuge, vita12$Mojonnier, epsilon = 100, paired = TRUE)
+```
+ The TOST test, on the other hand, does not have enough evidence to rejects its Ho, that the two sets are different, if the acceptable difference is 100.  It requires an acceptable difference of about 260 to consider that these two sets are the same.
+ 
