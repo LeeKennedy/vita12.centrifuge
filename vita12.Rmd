@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ## Objective ##
-To establish whether the use of Mojonnier tube can be replaced by centrifuge tubes as part of the VITA12 analysis.
+To establish whether the use of Mojonnier flasks can be replaced by centrifuge tubes as part of the VITA12 analysis.
 
 
 ```{r, echo = FALSE}
@@ -18,10 +18,12 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(equivalence)
+library(lubridate)
 
 # Data Input -------------------------------------------------------------
 vita <- read_excel("~/Documents/GitHub/vita12.centrifuge/data/VITA12 CENTRIFUGE TUBES TRIAL STUDY.xlsx", 
                    skip = 1)
+
 
 # Data Cleaning ----------------------------------------------------------
 
@@ -29,12 +31,15 @@ vita <- vita[-1,c(-5,-8)]
 colnames(vita)[1:6] <- c("Analyst", "Date", "Batch", "Sample", "Mojonnier", "Centrifuge")
 
 vita[,5:6] <- sapply(vita[,5:6], as.numeric)
+vita <- vita %>% 
+        fill(Analyst, Date, Batch)
+        
+
 vita12 <- vita %>% 
-        fill(Analyst, Date, Batch) %>% 
         na.omit(Sample)
 ```
 
-Ofter tidying the paired data:
+After tidying, the paired data looks like this:
 
 ```{r}
 vita12
@@ -46,22 +51,62 @@ vita12
 vita_plot <- ggplot(vita12, aes(x=Mojonnier, y=Centrifuge)) +
         geom_point(shape=21, size=4, col="black", fill="cornflowerblue") +
         geom_abline(slope = 1, intercept = 0, lty=2, col="red")
-vita_plot
 ```
 
+```{r}
+vita_plot
+```
+The dotted red line is the equivalence point.
+
+
 ### Students t-test, paired ###
+
+The t-tet takes the possition that the samples are the same (Ho = there is no difference):
+
 ```{r, echo = FALSE}
 t.test(vita12$Centrifuge, vita12$Mojonnier, paired = TRUE)
 
 ```
 
-The t-test indicates that there is not enough difference between the data sets to reject the null hypothesis, Ho, that there is no difference between the two sets.
+The t-test indicates that there is not enough difference between the data sets to reject the null hypothesis, Ho, that there is no difference between the two sets.  So far so good.
+
 
 ### TOST Test ###
+
+The TOST (Two one-sided t-tests) takes the reverse position (Ho = there is a difference between the two sets) and requires an acceptable difference that the user thinks would be insignificant to them.  There will always be a difference, what difference can you accept as natural variance?
+
 The nominal acceptable difference has been set at 100.
 
 ```{r, echo=FALSE}
 tost(vita12$Centrifuge, vita12$Mojonnier, epsilon = 100, paired = TRUE)
 ```
- The TOST test, on the other hand, does not have enough evidence to rejects its Ho, that the two sets are different, if the acceptable difference is 100.  It requires an acceptable difference of about 260 to consider that these two sets are the same.
+ The TOST test, on the other hand, does not have enough evidence to reject its Ho, that the two sets are different, if the acceptable difference is 100.  
  
+The net outcome of this is that there is insufficent data to make a decision.
+ 
+ 
+### IRM001A Comparison ###
+ 
+Plotting the batchs for the IRM (IRM001A) gives the following:
+ 
+```{r}
+ vita12a <- vita %>%
+        filter(grepl("IRM001A",Sample))
+vita12a$Sample <- "IRM001A"
+vita12a <- tidyr::gather(data = vita12a, key = Procedure, value = Result, na.rm = FALSE, Mojonnier, Centrifuge)
+vita12a <- vita12a %>% 
+        arrange(Date) %>% 
+        na.omit
+vita12a
+
+
+```
+
+```{r, echo = FALSE}
+vita12_plot2 <- ggplot(vita12a, aes(x=Batch, y=Result, fill = Procedure)) +
+        geom_point(size=4, shape=21,col = "Black") +
+        labs(title = "IRM001A, run in three batches")
+vita12_plot2
+```
+
+Looking at the above graph, there is clearly a lot more variance in the centrifuge tube results than in the Mojonnier tube results.
