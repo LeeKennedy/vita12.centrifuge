@@ -21,8 +21,15 @@ library(equivalence)
 library(lubridate)
 
 # Data Input -------------------------------------------------------------
-vita <- read_excel("~/Documents/GitHub/vita12.centrifuge/data/VITA12 CENTRIFUGE TUBES TRIAL STUDY.xlsx", 
+
+
+if("Windows" %in% Sys.info()['sysname'] == TRUE){
+        vita <- read_excel("H:/GitHub Projects/vita12.centrifuge/data/VITA12 CENTRIFUGE TUBES TRIAL STUDY.xlsx", 
+    skip = 1)
+} else {
+        vita <- read_excel("~/Documents/GitHub/vita12.centrifuge/data/VITA12 CENTRIFUGE TUBES TRIAL STUDY.xlsx", 
                    skip = 1)
+}
 
 
 # Data Cleaning ----------------------------------------------------------
@@ -61,7 +68,7 @@ The dotted red line is the equivalence point.
 
 ### Students t-test, paired ###
 
-The t-tet takes the possition that the samples are the same (Ho = there is no difference):
+The t-test takes the position that the samples are the same (Ho = there is no difference):
 
 ```{r, echo = FALSE}
 t.test(vita12$Centrifuge, vita12$Mojonnier, paired = TRUE)
@@ -75,7 +82,7 @@ The t-test indicates that there is not enough difference between the data sets t
 
 The TOST (Two one-sided t-tests) takes the reverse position (Ho = there is a difference between the two sets) and requires an acceptable difference that the user thinks would be insignificant to them.  There will always be a difference, what difference can you accept as natural variance?
 
-The nominal acceptable difference has been set at 100.
+The nominal acceptable difference has been choosen at 100 although this is clearly too large for the low data set.
 
 ```{r, echo=FALSE}
 tost(vita12$Centrifuge, vita12$Mojonnier, epsilon = 100, paired = TRUE)
